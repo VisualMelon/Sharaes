@@ -1,0 +1,355 @@
+anim mapIdle
+model map
+
+flow 0
+
+motion a
+noupdate
+duration 10000
+end motion
+
+end flow
+
+end anim
+
+
+anim cloudsIdle
+model clouds
+
+flow 0
+
+motion a
+noupdate
+duration 10000
+end motion
+
+end flow
+
+end anim
+
+
+
+
+anim idle
+model human
+
+flow 1
+
+motion bef
+duration 5
+// reset
+a rotation_smth1 right_arm_upper 0.3 0.0 0.0
+a rotation_smth1 right_arm_lower -0.2 0.0 0.0
+
+a rotation_smth1 left_arm_upper -0.3 0.0 0.0
+a rotation_smth1 left_arm_lower 0.2 0.0 0.0
+
+a rotation_smth1 body 0.0 0.05 0.0
+a rotation_smth1 right_leg_upper 0.0 0.0 0.1
+a rotation_smth1 right_leg_lower 0.0 0.0 -0.2
+
+a rotation_smth1 left_leg_upper 0.0 0.0 0.0
+a rotation_smth1 left_leg_lower 0.0 0.0 0.0
+end motion
+
+motion a
+duration 500
+a rotation_smth1 body 0.0 -0.05 0.0
+a rotation_smth1 right_leg_upper 0.0 0.0 0.0
+a rotation_smth1 right_leg_lower 0.0 0.0 0.0
+end motion
+
+motion b
+duration 500
+// relax
+a rotation_smth1 right_arm_upper 0.3 0.0 0.0
+a rotation_smth1 right_arm_lower -0.2 0.0 0.0
+
+a rotation_smth1 left_arm_upper -0.3 0.0 0.0
+a rotation_smth1 left_arm_lower 0.2 0.0 0.0
+
+a rotation_smth1 body 0.0 0.05 0.0
+a rotation_smth1 right_leg_upper 0.0 0.0 0.1
+a rotation_smth1 right_leg_lower 0.0 0.0 -0.2
+
+a rotation_smth1 left_leg_upper 0.0 0.0 0.0
+a rotation_smth1 left_leg_lower 0.0 0.0 0.0
+end motion
+
+end flow
+
+flow 2
+
+motion a
+duration 300
+a rotation_smth1 neck 0.0 0.0 0.0 // RESET
+a rotation_smth1 head 0.0 0.3 0.0
+end motion
+
+motion afill
+duration 200
+end motion
+
+motion b
+duration 300
+a rotation_smth1 head 0.0 -0.1 0.0
+end motion
+
+motion c
+duration 200
+a rotation_smth1 head 0.0 -0.15 -0.3
+end motion
+
+motion a2
+duration 300
+a rotation_smth1 head 0.0 0.3 0.0
+end motion
+
+motion afill2
+duration 200
+end motion
+
+motion b2
+duration 300
+a rotation_smth1 head 0.0 -0.1 0.0
+end motion
+
+motion c2
+duration 200
+a rotation_smth1 neck 0.0 0.0 0.3
+a rotation_smth1 head 0.0 -0.15 0.3
+end motion
+
+end flow
+
+end anim
+
+
+
+anim head_nod
+model human
+
+flow 1
+
+motion a
+duration 80
+a rotation_smth1 head 0.0 0.0 0.3
+end motion
+
+motion b
+duration 80
+a rotation_smth1 head 0.0 0.0 -0.2
+end motion
+
+end flow
+
+end anim
+
+
+
+anim head_shake
+model human
+
+flow 1
+
+motion a
+duration 60
+a rotation_smth1 head 0.0 0.4 0.0
+a rotation_smth1 neck 0.0 0.3 0.0
+end motion
+
+motion b
+duration 60
+a rotation_smth1 head 0.0 -0.4 0.0
+a rotation_smth1 neck 0.0 -0.3 0.0
+end motion
+
+end flow
+
+end anim
+
+
+
+
+anim collect
+model human
+
+flow 0 
+
+motion a
+duration 10
+a rotation_smth1 body 0.0 0.0 0.0
+
+a rotation_smth1 right_leg_upper 0.0 0.0 0.0
+a rotation_smth1 right_leg_lower 0.0 0.0 0.0
+a rotation_smth1 left_leg_upper 0.0 0.0 0.0
+a rotation_smth1 left_leg_lower 0.0 0.0 0.0
+end motion
+
+motion b
+duration 100
+a rotation_smth1 body 0.0 0.0 0.0
+
+a rotation_smth1 right_leg_upper 0.0 0.0 0.0
+a rotation_smth1 right_leg_lower 0.0 0.0 0.0
+a rotation_smth1 left_leg_upper 0.0 0.0 0.0
+a rotation_smth1 left_leg_lower 0.0 0.0 0.0
+end motion
+
+end flow
+
+flow 1
+
+motion a
+duration 40
+a rotation_smth1 right_arm_upper 0.0 0.0 1.2
+a rotation_smth1 right_arm_lower 0.0 0.0 0.0
+
+a rotation_smth1 left_arm_upper 0.0 0.0 0.6
+a rotation_smth1 left_arm_lower 0.4 0.0 0.0
+end motion
+
+motion b
+duration 40
+a rotation_smth1 right_arm_upper 0.0 0.0 1.0
+a rotation_smth1 right_arm_lower -0.5 0.0 0.0
+
+a rotation_smth1 left_arm_upper 0.0 0.0 0.6
+a rotation_smth1 left_arm_lower 0.8 0.0 0.0
+end motion
+
+end flow
+
+flow 2
+
+motion a
+duration 250
+a rotation_smth1 head 0.0 0.1 0.0
+a rotation_smth1 neck 0.0 0.1 0.0
+end motion
+
+motion a
+duration 250
+a rotation_smth1 head 0.0 -0.1 0.0
+a rotation_smth1 neck 0.0 -0.1 0.0
+end motion
+
+
+end flow
+
+end anim
+
+
+
+
+anim right_wave
+model human
+
+flow 1
+
+motion a0
+duration 20
+a rotation_smth0 right_arm_upper 2.4 0.0 0.0
+a rotation_smth0 right_arm_lower 0.0 0.0 0.0
+a rotation_smth1 head 0.1 0.0 0.0
+end motion
+
+motion b0
+duration 20
+a rotation_smth0 right_arm_upper 2.5 0.0 0.0
+a rotation_smth0 right_arm_lower 0.9 0.0 0.0
+end motion
+
+//motion end
+//duration 20
+//a rotation_smth1 right_arm_upper 0.3 0.0 0.0
+//a rotation_smth1 right_arm_lower -0.2 0.0 0.0
+//a rotation_smth1 head 0.0 0.0 0.0
+//end motion
+
+end flow
+
+end anim
+
+
+
+
+anim star
+model human
+
+flow 1
+
+motion a
+duration 20
+a rotation_smth1 right_arm_upper 2.4 0.0 0.0
+a rotation_smth1 left_arm_upper -2.4 0.0 0.0
+a rotation_smth1 right_leg_upper 0.7 0.0 0.0
+a rotation_smth1 left_leg_upper -0.7 0.0 0.0
+end motion
+
+motion afill
+duration 100
+end motion
+
+motion b
+duration 20
+a rotation_smth1 right_arm_upper 0.3 0.0 0.0
+a rotation_smth1 left_arm_upper -0.3 0.0 0.0
+a rotation_smth1 right_leg_upper 0.0 0.0 0.0
+a rotation_smth1 left_leg_upper 0.0 0.0 0.0
+end motion
+
+motion afill
+duration 100
+end motion
+
+end flow
+
+end anim
+
+
+
+
+anim walk
+model human
+
+flow 1
+
+motion a
+duration 15
+a rotation_smth1 right_leg_upper 0.0 0.0 1.0
+a rotation_smth1 right_leg_lower 0.0 0.0 -1.2
+a rotation_smth1 left_leg_upper 0.0 0.0 -1.0
+a rotation_smth1 left_leg_lower 0.0 0.0 0.0
+
+a rotation_smth1 right_arm_upper 0.3 0.0 -0.2 0.0
+a rotation_smth1 right_arm_lower -0.2 0.0 -0.0 0.0
+a rotation_smth1 left_arm_upper -0.3 0.0 0.2 0.0
+a rotation_smth1 left_arm_lower 0.2 0.0 0.1 0.0
+end motion
+
+motion b
+duration 15
+a rotation_smth1 right_leg_upper 0.0 0.0 -1.0
+a rotation_smth1 right_leg_lower 0.0 0.0 0.0
+a rotation_smth1 left_leg_upper 0.0 0.0 1.0
+a rotation_smth1 left_leg_lower 0.0 0.0 -1.2
+
+a rotation_smth1 right_arm_upper 0.3 0.0 0.2 0.0
+a rotation_smth1 right_arm_lower -0.2 0.0 0.1 0.0
+a rotation_smth1 left_arm_upper -0.3 0.0 -0.2 0.0
+a rotation_smth1 left_arm_lower 0.2 0.0 -0.0 0.0
+end motion
+
+end flow
+
+flow HAHHAA
+
+motion hahahahaha
+duration 10
+//a modcol one 0.01 0.022 0.035
+end motion
+
+end flow
+
+end anim

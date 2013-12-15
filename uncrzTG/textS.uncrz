@@ -1,0 +1,33 @@
+// sprites here
+
+sprite fire
+
+shader_dx9 un_shade.fx
+technique sprite_fire
+technique_light sprite_light
+technique_over over
+
+colmod 1 1 1 1
+texture fire.tga
+lighting none
+alpha add
+sidewisealpha add
+dim 4 4 0
+
+end sprite
+
+sprite smoke
+
+shader_dx9 un_shade.fx
+technique sprite_smoke
+technique_light sprite_light
+technique_over over
+
+colmod 1 1 1 1
+texture smoke.tga
+lighting none
+alpha add
+sidewisealpha add
+dim 2 2 0
+
+end sprite
