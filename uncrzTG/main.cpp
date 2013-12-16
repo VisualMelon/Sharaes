@@ -8121,6 +8121,7 @@ const DWORD UIT_button = 2;
 // ui item action
 const DWORD UIA_leftclick = 1;
 const DWORD UIA_rightclick = 2;
+const DWORD UIA_mousemove = 3;
 
 struct uiItem
 {
@@ -8216,14 +8217,14 @@ public:
 			effect.setTexture3(tex3);
 	}
 
-	bool getTaped(float x, float y, float offsetX, float offsetY, uiItem** tapedOut)
+	bool getTaped(float x, float y, float offsetX, float offsetY, uiItem** tapedOut, float* xOut, float* yOut)
 	{
 		if (x >= rect.left + offsetX && x <= rect.right + offsetX && y >= rect.top + offsetY && y <= rect.bottom + offsetY)
 		{
 			// check children
 			for each (uiItem* uii in uiItems)
 			{
-				if (uii->enabled && uii->getTaped(x, y, offsetX + rect.left, offsetY + rect.top, tapedOut))
+				if (uii->enabled && uii->getTaped(x, y, offsetX + rect.left, offsetY + rect.top, tapedOut, xOut, yOut))
 				{
 					return true; // stop on the first child to be taped
 				}
@@ -8232,6 +8233,8 @@ public:
 			if (clickable)
 			{
 				// no children taped, return me
+				*xOut = x - (rect.left + offsetX);
+				*yOut = y - (rect.top + offsetY);
 				*tapedOut = this;
 				return true;
 			}
@@ -8407,6 +8410,9 @@ public:
 	std::vector<UNCRZ_obj*> zSortedObjs; // for anything that needs to be drawn back-to-front
 	std::vector<int> zsoLocalIndexes; // for anything that needs to be drawn back-to-front
 
+	D3DVIEWPORT9 viewViewPort;
+	D3DXMATRIX viewViewMat; // (texAligned, x and y are 0..1)
+	D3DXMATRIX viewProjMat; // (texAligned, x and y are 0..1)
 	D3DXMATRIX viewViewProj; // (texAligned, x and y are 0..1)
 	D3DXMATRIX viewViewProjVP; // (x and y are -1..1)
 	
@@ -8678,6 +8684,7 @@ void term();
 void deSelect();
 void eval();
 void handleUi(uiItem*, DWORD);
+void handleUi(uiItem*, DWORD, DWORD*, int);
 void handleKeys();
 void reload(LPDIRECT3DDEVICE9);
 void moveCamera(LPDIRECT3DDEVICE9);
@@ -8983,31 +8990,22 @@ int getTapedObj(D3DXVECTOR3* rayPos, D3DXVECTOR3* rayDir, float* distRes, bool c
 	return -1;
 }
 
-uiItem* getTapedUiItem(float x, float y)
+uiItem* getTapedUiItem(float x, float y, float* xOut, float* yOut)
 {
 	uiItem* taped;
 	for each (uiItem* uii in uiItems)
 	{
-		if (uii->enabled && uii->getTaped(x, y, 0, 0, &taped))
+		if (uii->enabled && uii->getTaped(x, y, 0, 0, &taped, xOut, yOut))
 			return taped;
 	}
 	return NULL;
 }
 
-
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	LPRECT clRect;
 	float sx, sy;
-	D3DVIEWPORT9 vp;
-	D3DXMATRIX mehMatrix;
-	D3DXMATRIX viewProjInv;
-	D3DXVECTOR3 nearVec, farVec, screenVec, rayPos, rayDir;
-	float distRes = 0.0f;
-	float rayDirMod;
+	float lx, ly;
 	uiItem* tapedUii;
-	D3DXVECTOR3 simpleDir;
-	D3DXVECTOR3 simpleLoc;
 
 	switch (message)
 	{
@@ -9023,92 +9021,37 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		sx = (float)LOWORD(lParam);
 		sy = (float)HIWORD(lParam);
 
-		mainDxDevice->GetViewport(&vp);
-
-		screenVec.x = sx;
-		screenVec.y = sy;
-
-		screenVec.z = 0.1f;
-
-		D3DXMatrixIdentity(&mehMatrix);
-
-		D3DXVec3Unproject(&nearVec, &screenVec, &vp, &projMatrix, &viewMatrix, &mehMatrix);
-
-		screenVec.z = 1.0f;
-		D3DXVec3Unproject(&farVec, &screenVec, &vp, &projMatrix, &viewMatrix, &mehMatrix);
-
-		rayPos = nearVec;
-		rayDir = farVec - nearVec;
-		
-		//if ((mousedVertex = terrain->collidesVertex(&rayPos, &rayDir, &distRes)) != -1)
-		//{
-		//	mousedGround = rayPos + rayDir * distRes;
-		//}
+		tapedUii = getTapedUiItem(sx, sy, &lx, &ly);
+		if (tapedUii != NULL)
+		{
+			DWORD hudat[2] = { lx, ly };
+			handleUi(tapedUii, UIA_mousemove, hudat, 2);
+			break;
+		}
 		break;
 	case WM_LBUTTONDOWN:
 		sx = (float)LOWORD(lParam);
 		sy = (float)HIWORD(lParam);
 
-		tapedUii = getTapedUiItem(sx, sy);
+		tapedUii = getTapedUiItem(sx, sy, &lx, &ly);
 		if (tapedUii != NULL)
 		{
-			handleUi(tapedUii, UIA_leftclick);
+			DWORD hudat[2] = { lx, ly};
+			handleUi(tapedUii, UIA_leftclick, hudat, 2);
 			break;
 		}
-
-		mainDxDevice->GetViewport(&vp);
-
-		screenVec.x = sx;
-		screenVec.y = sy;
-
-		screenVec.z = 0.1f;
-
-		D3DXMatrixIdentity(&mehMatrix);
-
-		D3DXVec3Unproject(&nearVec, &screenVec, &vp, &projMatrix, &viewMatrix, &mehMatrix);
-
-		screenVec.z = 1.0f;
-		D3DXVec3Unproject(&farVec, &screenVec, &vp, &projMatrix, &viewMatrix, &mehMatrix);
-
-		rayPos = nearVec;
-		rayDir = farVec - nearVec;
-		rayDirMod = sqrt(rayDir.x * rayDir.x + rayDir.y * rayDir.y + rayDir.z * rayDir.z);
-		rayDir.x /= rayDirMod;
-		rayDir.y /= rayDirMod;
-		rayDir.z /= rayDirMod;
-
-		simpleSplatSquareDecal_Model(meObj->model, mainDxDevice, 100, &rayPos, &rayDir, 1.0, 1.0, 1.0, 0, 100, "tap.tga", &textures, 45, &mehMatrix);
 		break;
 	case WM_RBUTTONDOWN:
 		sx = (float)LOWORD(lParam);
 		sy = (float)HIWORD(lParam);
 
-		tapedUii = getTapedUiItem(sx, sy);
+		tapedUii = getTapedUiItem(sx, sy, &lx, &ly);
 		if (tapedUii != NULL)
 		{
-			handleUi(tapedUii, UIA_rightclick);
+			DWORD hudat[2] = { lx, ly };
+			handleUi(tapedUii, UIA_rightclick, hudat, 2);
 			break;
 		}
-
-		//GetClientRect(hWnd, clRect);
-
-		mainDxDevice->GetViewport(&vp);
-
-		screenVec.x = sx;
-		screenVec.y = sy;
-
-		screenVec.z = 0.1f;
-
-		D3DXMatrixIdentity(&mehMatrix);
-
-		D3DXVec3Unproject(&nearVec, &screenVec, &vp, &projMatrix, &viewMatrix, &mehMatrix);
-
-		screenVec.z = 1.0f;
-		D3DXVec3Unproject(&farVec, &screenVec, &vp, &projMatrix, &viewMatrix, &mehMatrix);
-
-		rayPos = nearVec;
-		rayDir = farVec - nearVec;
-
 		break;
 	case WM_KEYDOWN:
 		keyDown[wParam] = true;
@@ -9256,17 +9199,50 @@ void prepBMap(std::ifstream* file, int* width, int* height)
 
 void handleUi(uiItem* uii, DWORD action)
 {
+	handleUi(uii, action, NULL, 0);
+}
+
+void handleUi(uiItem* uii, DWORD action, DWORD* data, int datalen)
+{
+	LPRECT clRect;
+	D3DVIEWPORT9 vp;
+	D3DXMATRIX mehMatrix;
+	D3DXMATRIX viewProjInv;
+	D3DXVECTOR3 nearVec, farVec, screenVec, rayPos, rayDir;
+	float distRes = 0.0f;
+	float rayDirMod;
+	D3DXVECTOR3 simpleDir;
+	D3DXVECTOR3 simpleLoc;
+
 	switch (action)
 	{
 	case UIA_leftclick:
-		//if (uii->name == "latexSell")
-		//{
-		//	if (gs_latex >= gv_latexBulk)
-		//	{
-		//		gs_latex -= gv_latexBulk;
-		//		gs_cash += gv_latexValue;
-		//	}
-		//}
+		if (uii->name == "mainover" && datalen == 2)
+		{
+			//mainDxDevice->GetViewport(&vp);
+			vp = views[0]->viewViewPort;
+
+			screenVec.x = data[0];
+			screenVec.y = data[1];
+
+			screenVec.z = 0.1f;
+
+			D3DXMatrixIdentity(&mehMatrix);
+
+			D3DXVec3Unproject(&nearVec, &screenVec, &vp, &views[0]->viewProjMat, &views[0]->viewViewMat, &mehMatrix);
+
+			screenVec.z = 1.0f;
+			D3DXVec3Unproject(&farVec, &screenVec, &vp, &views[0]->viewProjMat, &views[0]->viewViewMat, &mehMatrix);
+
+			rayPos = nearVec;
+			rayDir = farVec - nearVec;
+			rayDirMod = sqrt(rayDir.x * rayDir.x + rayDir.y * rayDir.y + rayDir.z * rayDir.z);
+			rayDir.x /= rayDirMod;
+			rayDir.y /= rayDirMod;
+			rayDir.z /= rayDirMod;
+
+			simpleSplatSquareDecal_Model(meObj->model, mainDxDevice, 100, &rayPos, &rayDir, 1.0, 1.0, 1.0, 0, 100, "tap.tga", &textures, 45, &mehMatrix);
+		}
 		break;
 	case UIA_rightclick:
 		break;
@@ -9309,10 +9285,8 @@ void handleKeys()
 		D3DXSaveTextureToFile("mehSun.bmp", D3DXIFF_BMP, lights[0]->lightTex, NULL);
 		D3DXSaveTextureToFile("mehSide.bmp", D3DXIFF_BMP, sideTex, NULL);
 		D3DXSaveTextureToFile("mehTarget.bmp", D3DXIFF_BMP, targetTex, NULL);
-		D3DXSaveTextureToFile("mehLeftV.bmp", D3DXIFF_BMP, views[0]->targetTex, NULL);
-		D3DXSaveTextureToFile("mehRightV.bmp", D3DXIFF_BMP, views[1]->targetTex, NULL);
-		D3DXSaveTextureToFile("mehLeftO.bmp", D3DXIFF_BMP, overs[0]->targetTex, NULL);
-		D3DXSaveTextureToFile("mehRightO.bmp", D3DXIFF_BMP, overs[1]->targetTex, NULL);
+		D3DXSaveTextureToFile("mehMainV.bmp", D3DXIFF_BMP, views[0]->targetTex, NULL);
+		D3DXSaveTextureToFile("mehMainO.bmp", D3DXIFF_BMP, overs[0]->targetTex, NULL);
 	}
 	if (keyDown[64 + 23]) // w
 	{ // FORWARD
@@ -9556,7 +9530,7 @@ void initUi(LPDIRECT3DDEVICE9 dxDevice)
 	rect.bottom = winHeight;
 	temp = new uiItem(dxDevice, "mainover", NULL, UIT_button, vertexDecPCT, "un_shade.fx", "over_final", "over_main", rect, &effects, &textures);
 	temp->enabled = true; // NEED to work out why these shaders are so whiney (simpleUi uses linear sampler, can't do linear sample on render target?)
-	temp->clickable = false;
+	temp->clickable = true;
 	uiItems.push_back(temp);
 	temp->colMod = D3DXVECTOR4(0, 1, 1, 1);
 	mainView = temp;
@@ -10810,14 +10784,14 @@ void drawScene(LPDIRECT3DDEVICE9 dxDevice, drawData* ddat, UNCRZ_view* view, DWO
 	dxDevice->SetDepthStencilSurface(view->zSurface);
 
 	D3DVIEWPORT9 vp = createViewPort(view->texWidth, view->texHeight);
+	view->viewViewPort = vp;
 	dxDevice->SetViewport(&vp);
-
 
 	if (view->clearView)
 		dxDevice->Clear(0, NULL, D3DCLEAR_TARGET, view->clearColor, 1.0f, 0);
 	dxDevice->Clear(0, NULL, D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
 	dxDevice->SetRenderState(D3DRS_ZENABLE, true);
-	dxDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+	dxDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_CCW);
 
 	setAlpha(dxDevice, view->alphaMode);
 
@@ -11254,6 +11228,8 @@ void moveCameraView(LPDIRECT3DDEVICE9 dxDevice, UNCRZ_view* view)
 	else if (view->viewMode == VM_persp)
 		moveCameraView_persp(view);
 
+	view->viewViewMat = viewMatrix;
+	view->viewProjMat = projMatrix;
 	view->viewViewProjVP = viewProj;
 	view->viewViewProj = viewProj;
 
