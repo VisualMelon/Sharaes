@@ -8252,7 +8252,7 @@ public:
 		
 		if (itemType == UIT_text)
 		{
-			drawText(offsetX, offsetY);
+			drawText(offsetX, offsetY, vt);
 		}
 
 		for each (uiItem* uii in uiItems)
@@ -8262,13 +8262,13 @@ public:
 		}
 	}
 
-	void drawText(float offsetX, float offsetY)
+	void drawText(float offsetX, float offsetY, viewTrans* vt)
 	{
 		RECT nRect;
-		nRect.left = rect.left + offsetX;
-		nRect.right = rect.right + offsetX;
-		nRect.top = rect.top + offsetY;
-		nRect.bottom = rect.bottom + offsetY;
+		nRect.left = vt->xToTextX(rect.left + offsetX);
+		nRect.right = vt->xToTextX(rect.right + offsetX);
+		nRect.top = vt->yToTextY(rect.top + offsetY);
+		nRect.bottom = vt->yToTextY(rect.bottom + offsetY);
 
 		font->DrawTextA(NULL, text.c_str(), -1, &nRect, 0, textCol);
 	}
@@ -8411,8 +8411,8 @@ public:
 	std::vector<int> zsoLocalIndexes; // for anything that needs to be drawn back-to-front
 
 	D3DVIEWPORT9 viewViewPort;
-	D3DXMATRIX viewViewMat; // (texAligned, x and y are 0..1)
-	D3DXMATRIX viewProjMat; // (texAligned, x and y are 0..1)
+	D3DXMATRIX viewViewMat;
+	D3DXMATRIX viewProjMat;
 	D3DXMATRIX viewViewProj; // (texAligned, x and y are 0..1)
 	D3DXMATRIX viewViewProjVP; // (x and y are -1..1)
 	
@@ -9204,7 +9204,7 @@ void handleUi(uiItem* uii, DWORD action)
 
 void handleUi(uiItem* uii, DWORD action, DWORD* data, int datalen)
 {
-	LPRECT clRect;
+	RECT crect;
 	D3DVIEWPORT9 vp;
 	D3DXMATRIX mehMatrix;
 	D3DXMATRIX viewProjInv;
@@ -9220,7 +9220,9 @@ void handleUi(uiItem* uii, DWORD action, DWORD* data, int datalen)
 		if (uii->name == "mainover" && datalen == 2)
 		{
 			//mainDxDevice->GetViewport(&vp);
-			vp = views[0]->viewViewPort;
+			vp = createViewPort(1);
+			GetClientRect(mainHWnd, &crect);
+			vp = createViewPort(crect.right - crect.left, crect.bottom - crect.top);
 
 			screenVec.x = data[0];
 			screenVec.y = data[1];
@@ -9241,7 +9243,7 @@ void handleUi(uiItem* uii, DWORD action, DWORD* data, int datalen)
 			rayDir.y /= rayDirMod;
 			rayDir.z /= rayDirMod;
 
-			simpleSplatSquareDecal_Model(meObj->model, mainDxDevice, 100, &rayPos, &rayDir, 1.0, 1.0, 1.0, 0, 100, "tap.tga", &textures, 45, &mehMatrix);
+			simpleSplatSquareDecal_Model(meObj->model, mainDxDevice, 100, &rayPos, &rayDir, 1.0, 1.0, 1.0, 0, 100, "tap.tga", &textures, rnd(3142), &mehMatrix);
 		}
 		break;
 	case UIA_rightclick:
@@ -9251,7 +9253,7 @@ void handleUi(uiItem* uii, DWORD action, DWORD* data, int datalen)
 
 void handleKeys()
 {
-	LPRECT clRect;
+	RECT crect;
 	float sx, sy;
 	D3DVIEWPORT9 vp;
 	D3DXMATRIX mehMatrix;
@@ -9307,7 +9309,7 @@ void handleKeys()
 		//camPos += dirVec;
 	}
 	if (keyDown[64 + 19]) // s
-	{ // FORWARD
+	{ // BACKWARD
 		dirVec = D3DXVECTOR3(moveVel, 0.0f, 0.0f);
 		D3DXMatrixRotationY(&mehMatrix, rotY - D3DX_PI);
 		D3DXVec3TransformNormal(&dirVec, &dirVec, &mehMatrix);
@@ -9316,7 +9318,7 @@ void handleKeys()
 		//camPos += dirVec;
 	}
 	if (keyDown[64 + 4]) // d
-	{ // LEFT
+	{ // RIGHT
 		dirVec = D3DXVECTOR3(moveVel, 0.0f, 0.0f);
 		D3DXMatrixRotationY(&mehMatrix, rotY + D3DX_PI * 0.5f);
 		D3DXVec3TransformNormal(&dirVec, &dirVec, &mehMatrix);
@@ -9403,7 +9405,7 @@ void eval()
 	camPos -= dirVec * focalDist;
 	D3DXVECTOR3 targVec = camPos + dirVec * focalDist;
 
-	views[0]->dimY = winWidth / (float)winHeight;
+	views[0]->dimY = (float)winWidth / (float)winHeight;
 	views[0]->camPos = camPos;
 	views[0]->dirNormalAt(targVec);
 }
@@ -9467,12 +9469,18 @@ LPDIRECT3DDEVICE9 initDevice(HWND hWnd)
 	dxPresParams.MultiSampleType = D3DMULTISAMPLE_4_SAMPLES;
 	//dxPresParams.MultiSampleType = D3DMULTISAMPLE_NONE;
 	
-	//dxPresParams.BackBufferWidth = 1600;
-	//dxPresParams.BackBufferHeight = 1200;
+	dxPresParams.BackBufferWidth = 1600;
+	dxPresParams.BackBufferHeight = 1200;
 	//dxPresParams.BackBufferWidth = 1280;
 	//dxPresParams.BackBufferHeight = 960;
-	dxPresParams.BackBufferWidth = 800;
-	dxPresParams.BackBufferHeight = 600;
+	//dxPresParams.BackBufferWidth = 800;
+	//dxPresParams.BackBufferHeight = 600;
+
+	// fit buffers to size of screen (for testing only)
+	RECT crect;
+	GetClientRect(mainHWnd, &crect);
+	//dxPresParams.BackBufferWidth = crect.right - crect.left + 1;
+	//dxPresParams.BackBufferHeight = crect.bottom - crect.top + 1;
 
 	if (dxPresParams.Windowed)
 		dxPresParams.FullScreen_RefreshRateInHz = 0;
@@ -9525,14 +9533,14 @@ void initUi(LPDIRECT3DDEVICE9 dxDevice)
 
 	// (view one view)
 	rect.left = 0;
-	rect.right = winWidth;
+	rect.right = winWidth + 1;
 	rect.top = 0;
-	rect.bottom = winHeight;
+	rect.bottom = winHeight + 1;
 	temp = new uiItem(dxDevice, "mainover", NULL, UIT_button, vertexDecPCT, "un_shade.fx", "over_final", "over_main", rect, &effects, &textures);
-	temp->enabled = true; // NEED to work out why these shaders are so whiney (simpleUi uses linear sampler, can't do linear sample on render target?)
+	temp->enabled = true; // NEED to work out why these shaders are so whiney (simpleUi uses linear sampler, can't do linear sample on render target? - seems to be happy now?)
 	temp->clickable = true;
 	uiItems.push_back(temp);
-	temp->colMod = D3DXVECTOR4(0, 1, 1, 1);
+	temp->colMod = D3DXVECTOR4(1, 1, 1, 1);
 	mainView = temp;
 
 	// debug view
@@ -10586,6 +10594,15 @@ void drawFrame(LPDIRECT3DDEVICE9 dxDevice)
 	DEBUG_DX_FLUSH();
 	DEBUG_HR_END(&hrsbstart, &hrsbend, &hrdrawUiTime);
 
+
+	dxDevice->GetViewport(&vp);
+	RECT crect;
+	GetClientRect(mainHWnd, &crect);
+	int winWidth = crect.right - crect.left;
+	int winHeight = crect.bottom - crect.top;
+	mainVt = viewTrans(vpWidth, vpHeight, winWidth, winHeight);
+
+
 	dxDevice->EndScene();
 
 	DEBUG_HR_START(&hrsbstart);
@@ -10710,8 +10727,8 @@ D3DVIEWPORT9 createViewPort(float scale)
 	D3DVIEWPORT9 vp;
 	vp.X = 0;
 	vp.Y = 0;
-	vp.Width = vpWidth * scale;
-	vp.Height = vpHeight * scale;
+	vp.Width = (float)vpWidth * scale;
+	vp.Height = (float)vpHeight * scale;
 	vp.MaxZ = 1.0f;
 	vp.MinZ = 0.0f;
 
