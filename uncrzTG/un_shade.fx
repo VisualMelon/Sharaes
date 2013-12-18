@@ -370,7 +370,7 @@ float4 calcDynModOrtho(float4 lmc)
 
 	float4 lightMod = 0.0;
 
-	float4 lightCoords;
+	float2 lightCoords;
 	lightCoords.x = lmc.x;
 	lightCoords.y = lmc.y;
 
@@ -385,7 +385,7 @@ float4 calcDynModPersp(float4 lmc)
 
 	float4 lightMod = 0.0;
 
-	float4 lightCoords;
+	float2 lightCoords;
 	lightCoords.x = lmc.x;
 	lightCoords.y = lmc.y;
 
@@ -748,6 +748,29 @@ VS_Output_Tex VShade_Sprite_Fire(VS_Input_Tex inp)
 	outp.pos = mul(centre + inp.pos, projMat);
 	outp.altPos = outp.pos;
 	outp.altPos.z = outp.altPos.z * outp.altPos.w * invFarDepth;
+	outp.col = inp.col;
+	outp.txc = inp.txc;
+
+	return outp;
+}
+
+VS_Output_Tex VShade_Sprite_Fire_Radial_Offset(VS_Input_Tex inp)
+{
+	VS_Output_Tex outp = (VS_Output_Tex)0;
+	float4 centre = (float4)0;
+	if (inp.tti >= 0)
+	{
+		centre = spriteLoc[inp.tti];
+	}
+	float4 oth = spriteLoc[inp.tti + 1];
+	inp.pos *= spriteDim;
+	if (oth.x > oth.z)
+	{
+		inp.pos *= ((oth.y - oth.x) / (oth.y - oth.z));
+	}
+	centre = mul(centre, viewMat);
+	outp.pos = mul(centre + inp.pos, projMat);
+	outp.altPos = outp.pos;
 	outp.col = inp.col;
 	outp.txc = inp.txc;
 
@@ -1617,6 +1640,94 @@ PS_Output PShade_Over_Fuzz(VS_Output_Over inp)
 }
 
 
+PS_Output PShade_Over_Offset(VS_Output_Over inp)
+{
+	PS_Output outp = (PS_Output)0;
+
+	float4 offCol = tex2D(tex1Sampler, inp.txc);
+	float2 offset;
+
+	offset.x = offCol.x;
+	offset.y = offCol.y;
+
+	offset.x -= 0.5 * offCol.z;
+	offset.y -= 0.5 * offCol.z;
+
+	//outp.col = tex2D(tex0Sampler, inp.txc);
+
+	offset.x *= 0.2;
+	offset.y *= 0.2;
+
+	//offset *= ticker;
+
+	inp.txc += offset;
+
+	outp.col = tex2D(tex0Sampler, inp.txc);
+
+/*
+	outp.col.x = inp.txc.x;
+	outp.col.y = inp.txc.y;
+	outp.col.z = 0;
+	outp.col.w = 1;
+*/
+
+	return outp;
+}
+
+PS_Output PShade_Tex_Radials(VS_Output_Tex inp)
+{
+	PS_Output outp = (PS_Output)0;
+
+	float4 offCol = tex2D(texSampler, inp.txc);
+
+	outp.col.x = (inp.txc.x - 0.5);
+	outp.col.y = -(inp.txc.y - 0.5);
+
+	outp.col *= (offCol.x - offCol.y) * colMod.x;
+
+	outp.col.x += 0.5;
+	outp.col.y += 0.5;
+
+	outp.col.z = 1;
+	outp.col.w = 1;
+
+	return outp;
+}
+
+PS_Output PShade_Tex_Radial_Offset(VS_Output_Tex inp)
+{
+	PS_Output outp = (PS_Output)0;
+
+	float4 offCol = tex2D(texSampler, inp.txc);
+
+	float2 offTxc = float2(offCol.x, offCol.y);
+	offTxc *= colMod.x;
+
+
+	// altPos is NOT w depth!
+	float wNum = inp.altPos.w;
+
+	inp.altPos = mul(inp.altPos, vpMat);
+	float2 tcoords = float2(inp.altPos.x, inp.altPos.y);
+
+	tcoords.x /= wNum;
+	tcoords.y /= wNum;
+
+	tcoords.x *= targTexData.z;
+	tcoords.y *= targTexData.w;
+
+	tcoords.x += targTexData.x;
+	tcoords.y += targTexData.y;
+
+	tcoords.x += offTxc.x;
+	tcoords.y += offTxc.y;
+
+	outp.col = tex2D(targTexSampler, tcoords);
+
+
+	return outp;
+}
+
 
 
 
@@ -1784,6 +1895,15 @@ technique sprite_smoke
 	}
 }
 
+technique sprite_fire_radial_offset
+{
+	pass unlit
+	{
+		VertexShader = compile vs_2_0 VShade_Sprite_Fire_Radial_Offset();
+		PixelShader = compile ps_2_0 PShade_Tex_Radial_Offset();
+	}
+}
+
 technique sprite_light
 {
 	pass lightortho
@@ -1932,6 +2052,15 @@ technique terrain_light
 	}
 }
 
+technique radialTex
+{
+	pass unlit
+	{
+		VertexShader = compile vs_2_0 VShade_Tex();
+		PixelShader = compile ps_2_0 PShade_Tex_Radials();
+	}
+}
+
 technique over
 {
 	pass over
@@ -1967,5 +2096,14 @@ technique over_fuzzy
 	{
 		VertexShader = compile vs_2_0 VShade_Over_Final();
 		PixelShader = compile ps_2_0 PShade_Over_Final_Fuzzy();
+	}
+}
+
+technique over_offset
+{
+	pass over
+	{
+		VertexShader = compile vs_2_0 VShade_Over_Final();
+		PixelShader = compile ps_2_0 PShade_Over_Offset();
 	}
 }

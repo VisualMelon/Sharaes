@@ -9344,6 +9344,25 @@ void eval()
 	// sprites
 	DEBUG_HR_START(&hrsbstart);
 
+	if (rnd(10) == 4)
+	{
+		fireSprites.push_back(UNCRZ_sprite_data(D3DXVECTOR4(
+		0,
+		0,
+		0,
+		1
+		), D3DXVECTOR4(0, 100, 30, 80)));
+	}
+	else if (rnd(9) == 3)
+	{
+		smokeSprites.push_back(UNCRZ_sprite_data(D3DXVECTOR4(
+		0,
+		0,
+		0,
+		1
+		), D3DXVECTOR4(0.0, 0.001, 5, 0.1)));
+	}
+
 	// fire
 	for (int i = (int)fireSprites.size() - 1; i >= 0; i--)
 	{
