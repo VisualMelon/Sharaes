@@ -9484,16 +9484,16 @@ LPDIRECT3DDEVICE9 initDevice(HWND hWnd)
 	dxPresParams.SwapEffect = D3DSWAPEFFECT_DISCARD;
 	dxPresParams.EnableAutoDepthStencil = TRUE;
 	dxPresParams.AutoDepthStencilFormat = D3DFMT_D16;
-    dxPresParams.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
+    dxPresParams.PresentationInterval = D3DPRESENT_INTERVAL_DEFAULT;
 	dxPresParams.MultiSampleType = D3DMULTISAMPLE_4_SAMPLES;
 	//dxPresParams.MultiSampleType = D3DMULTISAMPLE_NONE;
 	
-	dxPresParams.BackBufferWidth = 1600;
-	dxPresParams.BackBufferHeight = 1200;
+	//dxPresParams.BackBufferWidth = 1600;
+	//dxPresParams.BackBufferHeight = 1200;
 	//dxPresParams.BackBufferWidth = 1280;
 	//dxPresParams.BackBufferHeight = 960;
-	//dxPresParams.BackBufferWidth = 800;
-	//dxPresParams.BackBufferHeight = 600;
+	dxPresParams.BackBufferWidth = 800;
+	dxPresParams.BackBufferHeight = 600;
 
 	// fit buffers to size of screen (for testing only)
 	RECT crect;
@@ -10981,7 +10981,7 @@ void drawLight(LPDIRECT3DDEVICE9 dxDevice, lightData* ld)
 	ddat.lightConeness = ld->coneness;
 
 	//cloudObj->draw(dxDevice, &ddat, DF_light); // just gets in the way
-	mapObj->draw(dxDevice, &ddat, DF_light);	
+	mapObj->draw(dxDevice, &ddat, DF_light);
 	drawZBackToFront(zSortedObjs, ld->zsoLocalIndexes, dxDevice, &ddat, DF_light);
 	if (fireSprites.size() > 0)
 	{
@@ -11104,8 +11104,8 @@ void initLights(LPDIRECT3DDEVICE9 dxDevice)
 
 	ld->lightEnabled = true;
 	ld->lightType = LT_ortho;
-	ld->dimX = 500;
-	ld->dimY = 500;
+	ld->dimX = 200;
+	ld->dimY = 200;
 	ld->lightDepth = 100;
 	ld->lightDir = D3DXVECTOR4(0.1, -10, 0.5, 0.0);
 	ld->lightPos = D3DXVECTOR4(0, 50.0, 0, 0.0);
@@ -11114,6 +11114,21 @@ void initLights(LPDIRECT3DDEVICE9 dxDevice)
 	ld->lightColMod = D3DXVECTOR4(1, 1, 1, 1);
 	ld->init(dxDevice, vpWidth * lightTexScale, vpHeight * lightTexScale, "lightPattern.tga", &textures); // MAXIMUM SIZE
 	ld->useLightMap = true;
+
+	lights.push_back(ld);
+
+
+	ld = new lightData("firelight");
+
+	ld->lightEnabled = true;
+	ld->lightType = LT_point;
+	ld->lightDepth = 100;
+	ld->lightDir = D3DXVECTOR4(0, 0, 1, 0.0); // not used
+	ld->lightPos = D3DXVECTOR4(0, 0, 0, 0.0);
+	ld->lightUp = D3DXVECTOR3(1, 0, 0); // not used
+	ld->lightAmbient = D3DXVECTOR4(0, 0, 0, 0);
+	ld->lightColMod = D3DXVECTOR4(0.5, 0.1, 0.1, 1);
+	ld->useLightMap = false;
 
 	lights.push_back(ld);
 
@@ -11177,8 +11192,11 @@ void initLights(LPDIRECT3DDEVICE9 dxDevice)
 	// this bit is IMPERATIVE (targettexture linking)
 	for (int i = lights.size() - 1; i >= 0; i--)
 	{
-		UNCRZ_texture* tex = new UNCRZ_texture(std::string("light_") + lights[i]->name, lights[i]->lightTex);
-		textures.push_back(tex);
+		if (lights[i]->useLightMap)
+		{
+			UNCRZ_texture* tex = new UNCRZ_texture(std::string("light_") + lights[i]->name, lights[i]->lightTex);
+			textures.push_back(tex);
+		}
 	}
 }
 
