@@ -12,7 +12,7 @@ texture fire.tga
 lighting none
 alpha add
 sidewisealpha none
-dim 4 4 0
+dim 2 3 0
 
 end sprite
 

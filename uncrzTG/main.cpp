@@ -2477,6 +2477,7 @@ skipPlainDecalPass:
 
 		effect.effect->End();*/
 
+		// what the hell are these?
 		dxDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
 		
 		dxDevice->SetVertexDeclaration(oldDec);
@@ -9344,7 +9345,7 @@ void eval()
 	// sprites
 	DEBUG_HR_START(&hrsbstart);
 
-	if (rnd(10) == 4)
+	if (rnd(6) == 4)
 	{
 		fireSprites.push_back(UNCRZ_sprite_data(D3DXVECTOR4(
 		0,
@@ -9352,12 +9353,10 @@ void eval()
 		0,
 		1
 		), D3DXVECTOR4(0, 100, 30, 80)));
-	}
-	else if (rnd(9) == 3)
-	{
+
 		smokeSprites.push_back(UNCRZ_sprite_data(D3DXVECTOR4(
 		0,
-		0,
+		1, // bit higher than fire
 		0,
 		1
 		), D3DXVECTOR4(0.0, 0.001, 5, 0.1)));
@@ -9492,6 +9491,8 @@ LPDIRECT3DDEVICE9 initDevice(HWND hWnd)
 	//dxPresParams.BackBufferHeight = 1200;
 	//dxPresParams.BackBufferWidth = 1280;
 	//dxPresParams.BackBufferHeight = 960;
+	//dxPresParams.BackBufferWidth = 920;
+	//dxPresParams.BackBufferHeight = 690;
 	dxPresParams.BackBufferWidth = 800;
 	dxPresParams.BackBufferHeight = 600;
 
@@ -10973,6 +10974,8 @@ void drawLight(LPDIRECT3DDEVICE9 dxDevice, lightData* ld)
 	dxDevice->Clear(0, NULL, D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
 	dxDevice->SetRenderState(D3DRS_ZENABLE, true);
 	dxDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_CW);
+	dxDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+	dxDevice->SetRenderState(D3DRS_ZWRITEENABLE, TRUE);
 	dxDevice->BeginScene();
 
 	drawData ddat = createDrawData(0.0f, &vp);

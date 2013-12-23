@@ -749,6 +749,7 @@ VS_Output_Tex VShade_Sprite_Fire(VS_Input_Tex inp)
 	outp.altPos = outp.pos;
 	outp.altPos.z = outp.altPos.z * outp.altPos.w * invFarDepth;
 	outp.col = inp.col;
+	outp.col.w *= 1.0 - (oth.x / oth.w);
 	outp.txc = inp.txc;
 
 	return outp;
