@@ -346,7 +346,6 @@ float4 calcLightModPoint(float4 lmc)
 
 	float targDist = (x * x + y * y + z * z);
 
-	clip(targDist);
 	targDist = 1.0 - targDist / (lightDepth * lightDepth);
 	clip(targDist);
 
@@ -901,10 +900,10 @@ VS_Output_Decal VShade_Decal_LitPoint(VS_Input_Decal inp)
 
 PS_Output PShade_Tex(VS_Output_Tex inp)
 {
-	float num = (inp.altPos.z / inp.altPos.w);
+	//float num = (inp.altPos.z / inp.altPos.w);
 	PS_Output outp = (PS_Output)0;
 	//outp.dep = num;
-	num = 1.0 - num;
+	//num = 1.0 - num;
 	outp.col = inp.col * tex2D(texSampler, inp.txc);
 
 	float alphaPreserve = outp.col.w;

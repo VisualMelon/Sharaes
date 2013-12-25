@@ -8816,8 +8816,8 @@ bool keyDown[255];
 UINT vpWidth;
 UINT vpHeight;
 
-float targetTexScale = 1.0f; // SSAA.... ish
-float lightTexScale = 10.0f;
+float targetTexScale = 2.0f; // SSAA.... ish
+float lightTexScale = 5.0f;
 
 // textures
 LPDIRECT3DTEXTURE9 targetTex;
@@ -9426,6 +9426,9 @@ void eval()
 	views[0]->dimY = (float)winWidth / (float)winHeight;
 	views[0]->camPos = camPos;
 	views[0]->dirNormalAt(targVec);
+
+	// flitty fire
+	lights[1]->lightPos = D3DXVECTOR4(((float)(rnd(11) - 5)) / 15.0, ((float)(rnd(11) - 5)) / 15.0, ((float)(rnd(11) - 5)) / 15.0, 0.0);
 }
 
 void settleObj(UNCRZ_obj* obj)
@@ -9557,7 +9560,7 @@ void initUi(LPDIRECT3DDEVICE9 dxDevice)
 	rect.top = 0;
 	rect.bottom = winHeight + 1;
 	temp = new uiItem(dxDevice, "mainover", NULL, UIT_button, vertexDecPCT, "un_shade.fx", "over_final", "over_main", rect, &effects, &textures);
-	temp->enabled = true; // NEED to work out why these shaders are so whiney (simpleUi uses linear sampler, can't do linear sample on render target? - seems to be happy now?)
+	temp->enabled = true; // NEED to work out why these shaders are so whiney (simpleUi uses linear sampler, can't do linear sample on render target?)
 	temp->clickable = true;
 	uiItems.push_back(temp);
 	temp->colMod = D3DXVECTOR4(1, 1, 1, 1);
@@ -11080,7 +11083,7 @@ void initOvers(LPDIRECT3DDEVICE9 dxDevice)
 	UNCRZ_over* tempOver;
 
 	tempOver = new UNCRZ_over("main");
-	tempOver->init(dxDevice, vpWidth * targetTexScale, vpHeight * targetTexScale, "un_shade.fx", "over", &effects, D3DFMT_A8B8G8R8);
+	tempOver->init(dxDevice, vpWidth * targetTexScale, vpHeight * targetTexScale, "un_shade.fx", "over_final", &effects, D3DFMT_A8B8G8R8);
 	tempOver->initStencil(dxDevice, zSurface);
 	tempOver->useTex = true; // write a "loadtex" func or something?
 	createTexture(dxDevice, "view_main", &tempOver->tex, &textures);
@@ -11109,8 +11112,8 @@ void initLights(LPDIRECT3DDEVICE9 dxDevice)
 	ld->lightType = LT_ortho;
 	ld->dimX = 200;
 	ld->dimY = 200;
-	ld->lightDepth = 100;
-	ld->lightDir = D3DXVECTOR4(0.1, -10, 0.5, 0.0);
+	ld->lightDepth = 10;
+	ld->lightDir = D3DXVECTOR4(0.1, 10, 0.5, 0.0);
 	ld->lightPos = D3DXVECTOR4(0, 50.0, 0, 0.0);
 	ld->lightUp = D3DXVECTOR3(1, 0, 0);
 	ld->lightAmbient = D3DXVECTOR4(0, 0, 0, 0);
@@ -11125,12 +11128,12 @@ void initLights(LPDIRECT3DDEVICE9 dxDevice)
 
 	ld->lightEnabled = true;
 	ld->lightType = LT_point;
-	ld->lightDepth = 100;
+	ld->lightDepth = 50;
 	ld->lightDir = D3DXVECTOR4(0, 0, 1, 0.0); // not used
 	ld->lightPos = D3DXVECTOR4(0, 0, 0, 0.0);
 	ld->lightUp = D3DXVECTOR3(1, 0, 0); // not used
 	ld->lightAmbient = D3DXVECTOR4(0, 0, 0, 0);
-	ld->lightColMod = D3DXVECTOR4(0.5, 0.1, 0.1, 1);
+	ld->lightColMod = D3DXVECTOR4(2.0, 1.4, 1.4, 1);
 	ld->useLightMap = false;
 
 	lights.push_back(ld);
