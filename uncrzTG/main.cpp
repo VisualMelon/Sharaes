@@ -2323,7 +2323,7 @@ skipPlainDecalPass:
 		// pass 0
 		if (drawArgs & DF_light)
 			effect.effect->BeginPass((int)ddat->lightType);
-		else if (ddat->performPlainPass)
+		else if (ddat->performPlainPass || lightingMode == LM_none)
 			effect.effect->BeginPass(0);
 		else
 			goto skipPlainPass;
@@ -2404,7 +2404,7 @@ skipPlainPass:
 		// pass 0
 		if (drawArgs & DF_light)
 			effect.effect->BeginPass((int)ddat->lightType);
-		else if (ddat->performPlainPass)
+		else if (ddat->performPlainPass || lightingMode == LM_none)
 			effect.effect->BeginPass(0);
 		else
 			goto skipPlainDecalPass;
@@ -10401,6 +10401,7 @@ void drawFrame(LPDIRECT3DDEVICE9 dxDevice)
 			drawLight(dxDevice, lights[i]);
 	}
 	DEBUG_DX_FLUSH();
+	
 	DEBUG_HR_END(&hrsbstart, &hrsbend, &hrdrawLightsTime);
 
 	// prep DynamicDecals
@@ -10771,6 +10772,39 @@ D3DVIEWPORT9 createViewPort(UINT w, UINT h)
 	return vp;
 }
 
+void setCloudStates(LPDIRECT3DDEVICE9 dxDevice)
+{
+	dxDevice->SetRenderState(D3DRS_CLIPPING, false); // clouds don't suffer z-ness
+	dxDevice->SetRenderState(D3DRS_ZENABLE, false);
+	dxDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+	dxDevice->SetRenderState(D3DRS_ZWRITEENABLE, false);
+}
+
+// note that sprites do their own thing
+void setSceneStates(LPDIRECT3DDEVICE9 dxDevice)
+{
+	dxDevice->SetRenderState(D3DRS_CLIPPING, true);
+	dxDevice->SetRenderState(D3DRS_ZENABLE, true);
+	dxDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_CCW);
+	dxDevice->SetRenderState(D3DRS_ZWRITEENABLE, true);
+}
+
+void setLightStates(LPDIRECT3DDEVICE9 dxDevice)
+{
+	dxDevice->SetRenderState(D3DRS_CLIPPING, true);
+	dxDevice->SetRenderState(D3DRS_ZENABLE, true);
+	dxDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_CW);
+	dxDevice->SetRenderState(D3DRS_ZWRITEENABLE, true);
+}
+
+void setOverStates(LPDIRECT3DDEVICE9 dxDevice)
+{
+	dxDevice->SetRenderState(D3DRS_CLIPPING, false);
+	dxDevice->SetRenderState(D3DRS_ZENABLE, false);
+	dxDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+	dxDevice->SetRenderState(D3DRS_ZWRITEENABLE, false);
+}
+
 void disableClip(LPDIRECT3DDEVICE9 dxDevice)
 {
 	dxDevice->SetRenderState(D3DRS_CLIPPING, false);
@@ -10830,9 +10864,7 @@ void drawScene(LPDIRECT3DDEVICE9 dxDevice, drawData* ddat, UNCRZ_view* view, DWO
 	if (view->clearView)
 		dxDevice->Clear(0, NULL, D3DCLEAR_TARGET, view->clearColor, 1.0f, 0);
 	dxDevice->Clear(0, NULL, D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
-	dxDevice->SetRenderState(D3DRS_ZENABLE, true);
-	dxDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_CCW);
-
+	
 	setAlpha(dxDevice, view->alphaMode);
 
 	dxDevice->BeginScene();
@@ -10840,7 +10872,12 @@ void drawScene(LPDIRECT3DDEVICE9 dxDevice, drawData* ddat, UNCRZ_view* view, DWO
 	if (sceneArgs & SF_notimed)
 	{
 		if ((sceneArgs & SF_noclouds) == false)
+		{
+			setCloudStates(dxDevice);
 			cloudObj->draw(dxDevice, ddat, drawArgs);
+		}
+		setSceneStates(dxDevice);
+
 		mapObj->draw(dxDevice, ddat, drawArgs);
 		drawZBackToFront(zSortedObjs, view->zsoLocalIndexes, dxDevice, ddat, drawArgs);
 
@@ -10868,10 +10905,12 @@ void drawScene(LPDIRECT3DDEVICE9 dxDevice, drawData* ddat, UNCRZ_view* view, DWO
 		if ((sceneArgs & SF_noclouds) == false)
 		{
 			DEBUG_HR_START(&hrsbstart);
+			setCloudStates(dxDevice);
 			cloudObj->draw(dxDevice, ddat, drawArgs);
 			DEBUG_DX_FLUSH();
 			DEBUG_HR_ACCEND(&hrsbstart, &hrsbend, &hrdrawCloudsTime);
 		}
+		setSceneStates(dxDevice);
 
 		DEBUG_HR_START(&hrsbstart);
 		mapObj->draw(dxDevice, ddat, drawArgs);
@@ -10912,8 +10951,7 @@ void drawOver(LPDIRECT3DDEVICE9 dxDevice, drawData* ddat, UNCRZ_over* over)
 	dxDevice->SetViewport(&vp);
 
 	dxDevice->SetRenderState(D3DRS_FILLMODE, D3DFILL_SOLID);
-	dxDevice->SetRenderState(D3DRS_ZENABLE, false);
-	dxDevice->SetRenderState(D3DRS_ZWRITEENABLE, false);
+	setOverStates(dxDevice);
 
 	dxDevice->BeginScene();
 
@@ -10971,14 +11009,12 @@ void drawLight(LPDIRECT3DDEVICE9 dxDevice, lightData* ld)
 	dxDevice->SetViewport(&vp);
 
 	moveCameraLight(dxDevice, ld);
-	disableClip(dxDevice);
+	//disableClip(dxDevice);
 
-	dxDevice->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(255, 0, 0), 1.0f, 0); // (all of texture used for depth (lies))
+	dxDevice->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(255, 0, 0), 1.0f, 0); // (all of texture used for depth (ish))
 	dxDevice->Clear(0, NULL, D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
-	dxDevice->SetRenderState(D3DRS_ZENABLE, true);
-	dxDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_CW);
 	dxDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
-	dxDevice->SetRenderState(D3DRS_ZWRITEENABLE, TRUE);
+	setLightStates(dxDevice);
 	dxDevice->BeginScene();
 
 	drawData ddat = createDrawData(0.0f, &vp);
@@ -10986,7 +11022,14 @@ void drawLight(LPDIRECT3DDEVICE9 dxDevice, lightData* ld)
 	ddat.lightDepth = ld->lightDepth;
 	ddat.lightConeness = ld->coneness;
 
+	// disgusting clouds states
+	//dxDevice->SetRenderState(D3DRS_ZENABLE, false); // clouds don't suffer z-ness
+	//dxDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+	//dxDevice->SetRenderState(D3DRS_ZWRITEENABLE, false);
 	//cloudObj->draw(dxDevice, &ddat, DF_light); // just gets in the way
+	//dxDevice->SetRenderState(D3DRS_ZENABLE, true);
+	//dxDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_CCW);
+	//dxDevice->SetRenderState(D3DRS_ZWRITEENABLE, true);
 	mapObj->draw(dxDevice, &ddat, DF_light);
 	drawZBackToFront(zSortedObjs, ld->zsoLocalIndexes, dxDevice, &ddat, DF_light);
 	if (fireSprites.size() > 0)
@@ -11112,8 +11155,8 @@ void initLights(LPDIRECT3DDEVICE9 dxDevice)
 	ld->lightType = LT_ortho;
 	ld->dimX = 200;
 	ld->dimY = 200;
-	ld->lightDepth = 10;
-	ld->lightDir = D3DXVECTOR4(0.1, 10, 0.5, 0.0);
+	ld->lightDepth = 100;
+	ld->lightDir = D3DXVECTOR4(0.1, -10, 0.5, 0.0);
 	ld->lightPos = D3DXVECTOR4(0, 50.0, 0, 0.0);
 	ld->lightUp = D3DXVECTOR3(1, 0, 0);
 	ld->lightAmbient = D3DXVECTOR4(0, 0, 0, 0);

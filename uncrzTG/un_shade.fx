@@ -1015,10 +1015,10 @@ PS_Output PShade_Tex_LitPoint(VS_Output_Tex inp)
 
 PS_Output PShade_Cloud(VS_Output_Tex inp)
 {
-	float num = (inp.altPos.z / inp.altPos.w);
+//	float num = (inp.altPos.z / inp.altPos.w);
 	PS_Output outp = (PS_Output)0;
 	//outp.dep = num;
-	num = 1.0 - num;
+//	num = 1.0 - num;
 	outp.col = inp.col * tex2D(texSampler, inp.txc);
 
 	float alphaPreserve = outp.col.w;
