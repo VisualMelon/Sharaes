@@ -41,9 +41,7 @@ const DWORD DF_default = 0x00000000;
 
 const DWORD SF_notimed = 0x00000001;
 const DWORD SF_noclouds = 0x00000002;
-const DWORD SF_swapcull = 0x00000004;
 
-const DWORD SF_light = SF_notimed | SF_noclouds | SF_swapcull;
 const DWORD SF_default = 0x00000000;
 
 LPDIRECT3DVERTEXDECLARATION9 vertexDecPC;
@@ -188,8 +186,8 @@ public:
 
 	void init(LPDIRECT3DDEVICE9 dxDevice, UINT w, UINT h, char* lightPatternFile, std::vector<UNCRZ_texture*>* textureList)
 	{	
-		D3DXCreateTexture(dxDevice, w, h, 1, D3DUSAGE_RENDERTARGET, D3DFMT_R32F, D3DPOOL_DEFAULT, &lightTex); // I don't know what implications there are of using this, but it seems to work
-		//D3DXCreateTexture(dxDevice, w, h, 1, D3DUSAGE_RENDERTARGET, D3DFMT_X8R8G8B8, D3DPOOL_DEFAULT, &lightTex);
+		//D3DXCreateTexture(dxDevice, w, h, 1, D3DUSAGE_RENDERTARGET, D3DFMT_R32F, D3DPOOL_DEFAULT, &lightTex); // I don't know what implications there are of using this, but it seems to work
+		D3DXCreateTexture(dxDevice, w, h, 1, D3DUSAGE_RENDERTARGET, D3DFMT_X8R8G8B8, D3DPOOL_DEFAULT, &lightTex);
 		lightTex->GetSurfaceLevel(0, &lightSurface);
 		
 		createTexture(dxDevice, lightPatternFile, &lightPatternTex, textureList);
@@ -3495,7 +3493,7 @@ int UNCRZ_model::collidesVertex(D3DXVECTOR3* rayPos, D3DXVECTOR3* rayDir, float*
 {
 	// bbox collision
 	if (modelBox.collides(rayPos, rayDir) == false)
-		return false;
+		return -1;
 
 	// vertex collision
 	if (vertexType == VX_PC)
@@ -8397,7 +8395,7 @@ public:
 	LPDIRECT3DSURFACE9 zSurface;
 	
 	DWORD viewMode;
-	DWORD alphaMode;
+	DWORD alphaMode; // be careful when considering using this, will almost certainly achieve nothing
 
 	float projectionNear;
 	float projectionFar;
@@ -8699,7 +8697,7 @@ drawData createDrawData(float, D3DVIEWPORT9* vp);
 drawData createDrawDataView(float, D3DVIEWPORT9* vp, UNCRZ_view*);
 drawData createDrawDataOver(float, D3DVIEWPORT9* vp, UNCRZ_over*);
 D3DVIEWPORT9 createViewPort(float);
-D3DVIEWPORT9 createViewPort(UINT, UINT);		
+D3DVIEWPORT9 createViewPort(UINT, UINT);
 
 float ticker = 0;
 
@@ -8816,7 +8814,7 @@ bool keyDown[255];
 UINT vpWidth;
 UINT vpHeight;
 
-float targetTexScale = 2.0f; // SSAA.... ish
+float targetTexScale = 1.0f; // SSAA.... ish
 float lightTexScale = 5.0f;
 
 // textures
@@ -9297,7 +9295,7 @@ void handleKeys()
 		D3DXMatrixRotationY(&mehMatrix, rotY);
 		D3DXVec3TransformNormal(&dirVec, &dirVec, &mehMatrix);
 		meObj->offset += dirVec;
-		settleObj(meObj);
+		//settleObj(meObj);
 		//camPos += dirVec;
 	}
 	if (keyDown[64 + 1]) // a
@@ -9306,7 +9304,7 @@ void handleKeys()
 		D3DXMatrixRotationY(&mehMatrix, rotY - D3DX_PI * 0.5f);
 		D3DXVec3TransformNormal(&dirVec, &dirVec, &mehMatrix);
 		meObj->offset += dirVec;
-		settleObj(meObj);
+		//settleObj(meObj);
 		//camPos += dirVec;
 	}
 	if (keyDown[64 + 19]) // s
@@ -9315,7 +9313,7 @@ void handleKeys()
 		D3DXMatrixRotationY(&mehMatrix, rotY - D3DX_PI);
 		D3DXVec3TransformNormal(&dirVec, &dirVec, &mehMatrix);
 		meObj->offset += dirVec;
-		settleObj(meObj);
+		//settleObj(meObj);
 		//camPos += dirVec;
 	}
 	if (keyDown[64 + 4]) // d
@@ -9324,7 +9322,7 @@ void handleKeys()
 		D3DXMatrixRotationY(&mehMatrix, rotY + D3DX_PI * 0.5f);
 		D3DXVec3TransformNormal(&dirVec, &dirVec, &mehMatrix);
 		meObj->offset += dirVec;
-		settleObj(meObj);
+		//settleObj(meObj);
 		//camPos += dirVec;
 	}
 }
@@ -9442,11 +9440,13 @@ void settleObj(UNCRZ_obj* obj)
 
 	rayDir = D3DXVECTOR3(0.0, -1.0, 0.0);
 
-	bool victory = mapObj->model->collidesVertex(&nearVec, &rayDir, &distRes);
-	if (victory)
+	int vicVert = mapObj->model->collidesVertex(&nearVec, &rayDir, &distRes);
+	if (vicVert != -1)
 	{
 		obj->offset.y = nearVec.y - distRes;
 	}
+	else
+		obj->offset.y += 0.5f;
 
 	obj->update(true);
 }
@@ -10076,7 +10076,11 @@ void initObjs(LPDIRECT3DDEVICE9 dxDevice)
 
 	zSortedObjs.push_back(meObj);
 	objs.push_back(meObj);
-	meObj->offset = D3DXVECTOR3(0, 100, 0);
+	meObj->offset = D3DXVECTOR3(0, 50, 0);
+	
+	mapObj->update(true);
+	meObj->update(true);
+	cloudObj->update(true);
 }
 
 void initSprites(LPDIRECT3DDEVICE9 dxDevice)
@@ -10865,7 +10869,7 @@ void drawScene(LPDIRECT3DDEVICE9 dxDevice, drawData* ddat, UNCRZ_view* view, DWO
 		dxDevice->Clear(0, NULL, D3DCLEAR_TARGET, view->clearColor, 1.0f, 0);
 	dxDevice->Clear(0, NULL, D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
 	
-	setAlpha(dxDevice, view->alphaMode);
+	setAlpha(dxDevice, view->alphaMode); // this generally won't achieve anything (because models will mess with stuff themselves)
 
 	dxDevice->BeginScene();
 
@@ -11104,7 +11108,7 @@ void initViews(LPDIRECT3DDEVICE9 dxDevice)
 	tempView->init(dxDevice, vpWidth * targetTexScale, vpHeight * targetTexScale, D3DFMT_A8B8G8R8);
 	tempView->initStencil(dxDevice, zSurface);
 	tempView->dimX = FOV;
-	tempView->dimY = vpWidth / (float)vpHeight / 2.0;
+	tempView->dimY = vpWidth / (float)vpHeight;// / 2.0;
 	tempView->viewMode = VM_persp;
 	tempView->alphaMode = AM_none;
 	tempView->clearView = true;
@@ -11153,11 +11157,11 @@ void initLights(LPDIRECT3DDEVICE9 dxDevice)
 
 	ld->lightEnabled = true;
 	ld->lightType = LT_ortho;
-	ld->dimX = 200;
-	ld->dimY = 200;
-	ld->lightDepth = 100;
-	ld->lightDir = D3DXVECTOR4(0.1, -10, 0.5, 0.0);
-	ld->lightPos = D3DXVECTOR4(0, 50.0, 0, 0.0);
+	ld->dimX = 500;
+	ld->dimY = 500;
+	ld->lightDepth = 200;
+	ld->lightDir = D3DXVECTOR4(0.1, -5, 0.5, 0.0);
+	ld->lightPos = D3DXVECTOR4(0, 100.0, 0, 0.0);
 	ld->lightUp = D3DXVECTOR3(1, 0, 0);
 	ld->lightAmbient = D3DXVECTOR4(0, 0, 0, 0);
 	ld->lightColMod = D3DXVECTOR4(1, 1, 1, 1);
