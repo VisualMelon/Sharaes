@@ -131,7 +131,8 @@ float4 lightAmbient;
 float4 lightColMod;
 
 Texture lightTex;
-sampler lightTexSampler = sampler_state { texture = <lightTex>;magfilter = LINEAR; minfilter = LINEAR; mipfilter = LINEAR; AddressU = border; AddressV = border; BorderColor = 0xFFFFFFFF;};
+sampler lightTexSampler = sampler_state { texture = <lightTex>;magfilter = NONE; minfilter = NONE; mipfilter = NONE; AddressU = border; AddressV = border; BorderColor = 0xFFFFFFFF;};
+sampler lightTexLinearSampler = sampler_state { texture = <lightTex>;magfilter = LINEAR; minfilter = LINEAR; mipfilter = LINEAR; AddressU = border; AddressV = border; BorderColor = 0xFFFFFFFF;};
 Texture lightPatternTex;
 sampler lightPatternTexSampler = sampler_state { texture = <lightPatternTex>;magfilter = NONE; minfilter = NONE; mipfilter = NONE; AddressU = border; AddressV = border; BorderColor = 0x00000000;};
 sampler lightPatternTexLinearSampler = sampler_state { texture = <lightPatternTex>;magfilter = LINEAR; minfilter = LINEAR; mipfilter = LINEAR; AddressU = border; AddressV = border; BorderColor = 0x00000000;};
@@ -296,12 +297,12 @@ float4 calcLightModOrtho(float4 lmc)
 
 	float targDist = lmc.z;
 
-	float4 lightCol = tex2D(lightTexSampler, lightCoords);
+	float4 lightCol = tex2D(lightTexLinearSampler, lightCoords);
 	float lightDist = lightCol.x;
 
 	if (lightDodge + lightDist > targDist)
 	{
-		lightMod = tex2D(lightPatternTexSampler, lightCoords) * lightColMod;
+		lightMod = tex2D(lightPatternTexLinearSampler, lightCoords) * lightColMod;
 		return lightMod;
 	}
 	lightMod = 0;
@@ -320,12 +321,12 @@ float4 calcLightModPersp(float4 lmc)
 
 	float targDist = lmc.z;
 
-	float4 lightCol = tex2D(lightTexSampler, lightCoords);
+	float4 lightCol = tex2D(lightTexLinearSampler, lightCoords);
 	float lightDist = lightCol.x;
 
 	if (lightDodge + lightDist > targDist)
 	{
-		lightMod = tex2D(lightPatternTexSampler, lightCoords) * lightColMod;
+		lightMod = tex2D(lightPatternTexLinearSampler, lightCoords) * lightColMod;
 		lightMod *= (1 - targDist * targDist);
 		return lightMod;
 	}
