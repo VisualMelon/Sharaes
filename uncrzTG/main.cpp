@@ -1706,7 +1706,7 @@ const DWORD LM_full = 0x00000001;
 
 const DWORD SD_none = 0x00000000; // don't use this
 const DWORD SD_colour = 0x00000001;
-const DWORD SD_alpha = 0x00000002;
+const DWORD SD_depth = 0x00000002;
 const DWORD SD_default = 0x00000003;
 
 // this is for internal use only
@@ -2861,7 +2861,7 @@ void UNCRZ_sprite::draw(LPDIRECT3DDEVICE9 dxDevice, drawData* ddat, UNCRZ_sprite
 	{
 		HRESULT res;
 
-		if (spriteDrawArgs & SD_alpha)
+		if (spriteDrawArgs & SD_depth)
 			dxDevice->SetRenderState(D3DRS_ZWRITEENABLE, TRUE);
 		else
 			dxDevice->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
@@ -9443,6 +9443,8 @@ void settleObj(UNCRZ_obj* obj)
 	int vicVert = mapObj->model->collidesVertex(&nearVec, &rayDir, &distRes);
 	if (vicVert != -1)
 	{
+		if (distRes > 6.0f) // drop a max of 1.0f each time
+			distRes = 6.0f;
 		obj->offset.y = nearVec.y - distRes;
 	}
 	else
@@ -10497,9 +10499,9 @@ void drawFrame(LPDIRECT3DDEVICE9 dxDevice)
 			smokeSprite->draw(dxDevice, &ddat, &sbuff, &smokeSprites.front(), 0, smokeSprites.size(), DF_default, SD_colour);
 		// alpha
 		if (fireSprites.size() > 0)
-			fireSprite->draw(dxDevice, &ddat, &sbuff, &fireSprites.front(), 0, fireSprites.size(), DF_default, SD_alpha);
+			fireSprite->draw(dxDevice, &ddat, &sbuff, &fireSprites.front(), 0, fireSprites.size(), DF_default, SD_depth);
 		if (smokeSprites.size() > 0)
-			smokeSprite->draw(dxDevice, &ddat, &sbuff, &smokeSprites.front(), 0, smokeSprites.size(), DF_default, SD_alpha);
+			smokeSprite->draw(dxDevice, &ddat, &sbuff, &smokeSprites.front(), 0, smokeSprites.size(), DF_default, SD_depth);
 		DEBUG_DX_FLUSH();
 		DEBUG_HR_ACCEND(&hrsbstart, &hrsbend, &hrdrawSpritesTime);
 
@@ -10897,11 +10899,11 @@ void drawScene(LPDIRECT3DDEVICE9 dxDevice, drawData* ddat, UNCRZ_view* view, DWO
 		// not asif we need these or anything
 		if (smokeSprites.size() > 0)
 		{
-			fireSprite->draw(dxDevice, ddat, &sbuff, &fireSprites.front(), 0, fireSprites.size(), drawArgs, SD_alpha);
+			fireSprite->draw(dxDevice, ddat, &sbuff, &fireSprites.front(), 0, fireSprites.size(), drawArgs, SD_depth);
 		}
 		if (smokeSprites.size() > 0)
 		{
-			smokeSprite->draw(dxDevice, ddat, &sbuff, &smokeSprites.front(), 0, smokeSprites.size(), drawArgs, SD_alpha);
+			smokeSprite->draw(dxDevice, ddat, &sbuff, &smokeSprites.front(), 0, smokeSprites.size(), drawArgs, SD_depth);
 		}
 	}
 	else
@@ -10934,9 +10936,9 @@ void drawScene(LPDIRECT3DDEVICE9 dxDevice, drawData* ddat, UNCRZ_view* view, DWO
 			smokeSprite->draw(dxDevice, ddat, &sbuff, &smokeSprites.front(), 0, smokeSprites.size(), drawArgs, SD_colour);
 		// alpha
 		if (fireSprites.size() > 0)
-			fireSprite->draw(dxDevice, ddat, &sbuff, &fireSprites.front(), 0, fireSprites.size(), drawArgs, SD_alpha);
+			fireSprite->draw(dxDevice, ddat, &sbuff, &fireSprites.front(), 0, fireSprites.size(), drawArgs, SD_depth);
 		if (smokeSprites.size() > 0)
-			smokeSprite->draw(dxDevice, ddat, &sbuff, &smokeSprites.front(), 0, smokeSprites.size(), drawArgs, SD_alpha);
+			smokeSprite->draw(dxDevice, ddat, &sbuff, &smokeSprites.front(), 0, smokeSprites.size(), drawArgs, SD_depth);
 		DEBUG_DX_FLUSH();
 		DEBUG_HR_ACCEND(&hrsbstart, &hrsbend, &hrdrawSpritesTime);
 	}
