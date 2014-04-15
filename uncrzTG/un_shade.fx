@@ -1569,6 +1569,16 @@ PS_Output PShade_Over_Final(VS_Output_Over inp)
 	return outp;
 }
 
+PS_Output PShade_Over_Final_FlatAlpha(VS_Output_Over inp)
+{
+	PS_Output outp = (PS_Output)0;
+
+	outp.col = tex2D(texSampler, inp.txc);
+	outp.col.w = 1;
+
+	return outp;
+}
+
 PS_Output PShade_Over_Linear(VS_Output_Over inp)
 {
 	PS_Output outp = (PS_Output)0;
@@ -2089,6 +2099,15 @@ technique over_final
 		PixelShader = compile ps_2_0 PShade_Over_Final();
 		//VertexShader = compile vs_2_0 VShade_Over_Final();
 		//PixelShader = compile ps_2_0 PShade_Over_Final_Fuzzy();
+	}
+}
+
+technique over_final_flatalpha
+{
+	pass over
+	{
+		VertexShader = compile vs_2_0 VShade_Over_Final();
+		PixelShader = compile ps_2_0 PShade_Over_Final_FlatAlpha();
 	}
 }
 
